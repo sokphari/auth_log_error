@@ -7,26 +7,15 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 class RouteServiceProvider extends ServiceProvider
 {
-    /**
-     * The path to your application's "home" route.
-     *
-     * Typically, users are redirected here after authentication.
-     *
-     * @var string
-     */
     public const HOME = '/home';
 
-    /**
-     * Define your route model bindings, pattern filters, and other route configuration.
-     */
     public function boot(): void
     {
-        RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
-        });
+        $this->configureRateLimiting();
 
         $this->routes(function () {
             Route::middleware('api')
@@ -35,6 +24,42 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
+        });
+    }
+
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(120)
+                ->by($request->user()?->id ?: $request->ip())
+                ->response(function () {
+                    return response()->json([
+                        'success' => false,
+                        'code' => 429,
+                        'message' => 'Too many requests. Please try again later.',
+                    ], 429);
+                });
+        });
+
+        RateLimiter::for('auth', function (Request $request) {
+            $email = Str::lower((string) $request->input('email', 'guest'));
+
+            return [
+                Limit::perMinute(20)->by($request->ip()),
+                Limit::perMinute(5)->by($email . '|' . $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('protected', function (Request $request) {
+            return Limit::perMinute(60)
+                ->by($request->user()?->id ?: $request->ip())
+                ->response(function () {
+                    return response()->json([
+                        'success' => false,
+                        'code' => 429,
+                        'message' => 'You are sending requests too fast. Please wait a moment.',
+                    ], 429);
+                });
         });
     }
 }

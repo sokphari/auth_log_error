@@ -1,49 +1,39 @@
 <?php
 
 use App\Http\Controllers\Api\ClientErrorController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+Route::prefix('v1')->group(function () {
+    Route::post('/client-errors', [ClientErrorController::class, 'store'])
+        ->middleware('throttle:api');
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+    Route::middleware('throttle:auth')->group(function () {
+        Route::post('/auth/register', [AuthController::class, 'register']);
+        Route::post('/auth/login', [AuthController::class, 'login']);
+    });
 
-Route::post('/client-errors', [ClientErrorController::class, 'store']);
+    Route::middleware(['auth:sanctum', 'throttle:protected'])->group(function () {
+        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::post('/auth/logout-all', [AuthController::class, 'logoutAll']);
 
-Route::get('/test-telegram-error', function () {
-    throw new RuntimeException('Testing Telegram error log from Laravel API');
-});
-Route::get('/test-telegram-error', function () {
-    throw new RuntimeException('Testing Telegram 500 server error');
-});
+        Route::get('/dashboard', function () {
+            return response()->json([
+                'success' => true,
+                'message' => 'Welcome to protected dashboard.',
+            ]);
+        });
 
-Route::get('/test-telegram-404', function () {
-    abort(404, 'Testing Telegram 404 not found');
-});
+        Route::middleware(['role:admin', 'ability:admin'])->get('/admin/dashboard', function () {
+            return response()->json([
+                'success' => true,
+                'message' => 'Welcome admin. This route is protected by role and token ability.',
+            ]);
+        });
+    });
 
-Route::get('/test-telegram-403', function () {
-    abort(403, 'Testing Telegram 403 forbidden');
-});
-
-Route::post('/test-telegram-validation', function (\Illuminate\Http\Request $request) {
-    $request->validate([
-        'name' => ['required', 'string'],
-        'email' => ['required', 'email'],
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Validation passed',
-    ]);
+    Route::get('/test-error', function () {
+        throw new RuntimeException('Testing Laravel Telegram error log with Sanctum project.');
+    });
 });
