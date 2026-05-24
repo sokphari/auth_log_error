@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
-        pdo \
         pdo_mysql \
         pdo_pgsql \
         zip \
@@ -28,7 +27,19 @@ COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.con
 
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN mkdir -p \
+    storage/app \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+RUN php artisan package:discover --ansi || true
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache

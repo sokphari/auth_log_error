@@ -3,6 +3,11 @@ set -e
 
 echo "Starting Laravel deployment..."
 
+mkdir -p storage/app storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+
+chown -R www-data:www-data storage bootstrap/cache || true
+chmod -R 775 storage bootstrap/cache || true
+
 php artisan config:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
