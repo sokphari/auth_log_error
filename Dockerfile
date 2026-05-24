@@ -28,21 +28,22 @@ COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.con
 COPY . .
 
 RUN mkdir -p \
-    storage/app \
-    storage/framework/cache \
+    storage/app/public \
+    storage/framework/cache/data \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs \
-    bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    bootstrap/cache
+
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 RUN php artisan package:discover --ansi || true
 
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
 
 COPY docker/scripts/start-container.sh /usr/local/bin/start-container
 RUN chmod +x /usr/local/bin/start-container
