@@ -5,6 +5,15 @@ use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    Route::get('/health', function () {
+        return response()->json([
+            'success' => true,
+            'message' => 'Laravel API is running.',
+            'app' => config('app.name'),
+            'env' => config('app.env'),
+        ]);
+    });
+
     Route::post('/client-errors', [ClientErrorController::class, 'store'])
         ->middleware('throttle:api');
 
