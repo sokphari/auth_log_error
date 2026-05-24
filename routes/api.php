@@ -37,12 +37,12 @@ Route::prefix('v1')->group(function () {
         Route::middleware(['role:admin', 'ability:admin'])->get('/admin/dashboard', function () {
             return response()->json([
                 'success' => true,
-                'message' => 'Welcome admin. This route is protected by role and token ability.',
+                'message' => 'Welcome admin.',
             ]);
         });
     });
 
     Route::get('/test-error', function () {
-        throw new RuntimeException('Testing Laravel Telegram error log with Sanctum project.');
+        throw new RuntimeException('Testing Laravel Telegram error log with Render deployment.');
     });
 });
